@@ -39,7 +39,8 @@ Every config, script, network diagram and "why I set it up this way" note will l
 | 2 | Creating, editing and reading files (`touch`, `nano`, `cat`) | ✅ |
 | 3 | Copying, moving, renaming, deleting (`cp`, `mv`, `rm`, `rmdir`) | ✅ |
 | 4 | Users, groups, permissions and `sudo` (`chmod`, `chown`, `usermod`) | ✅ |
-| 5 | Installing software (`apt`) + system info | ⬜ Next |
+| 5 | Installing software (`apt` install/remove/purge) + system info (`free`, `nproc`, `lscpu`) | ✅ |
+| — | Week 1 mini-project: organized `homelab/` folder + system info report | ⬜ Next |
 
 ## Setup
 
