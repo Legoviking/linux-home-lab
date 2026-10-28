@@ -18,7 +18,9 @@
 | 3 | 2026-10-20 | Copying, moving, renaming and deleting | ✅ Done |
 | — | 2026-10-20 / 10-26 | Review mini-lab (Lessons 1–3) | 🟡 Challenges 1–2 done |
 | 4 | 2026-10-26 | Users, groups, permissions and `sudo` | ✅ Done |
-| 5 | — | Installing software (`apt`) + system info | ⬜ Next |
+| 4 | 2026-10-27 | Lesson 4 redo + password security briefing | ✅ Done |
+| 5 | 2026-10-28 | Installing software (`apt`) + system info | ✅ Done |
+| — | — | Week 1 mini-project: `homelab/` folder + system info report | ⬜ Next |
 
 ---
 
@@ -230,22 +232,137 @@ sudo chown ed rootfile.txt          # took ownership back → echo >> worked
 
 ---
 
-## Command Cheat Sheet (Lessons 1–3)
+## Entry 6 — 2026-10-27 — Lesson 4 Redo: Permissions + Password Security
+
+**Goal:** Fix my two weak spots from Entry 5 (the three permission classes, and `x` on a folder), then learn how Linux handles passwords.
+
+**What I did**
+```bash
+mkdir -p lesson4 && cd lesson4      # && = run the 2nd command only if the 1st works
+touch notes.txt
+chmod 640 notes.txt                 # owner rw, group r, others nothing (numeric)
+chmod u=rw,g=r,o= notes.txt         # same result (symbolic, using = to set exactly)
+./hello.sh                          # Permission denied → chmod u+x hello.sh
+mkdir tabtest && cd tabtest         # practiced Tab completion (apples / apricots / bananas)
+cd ..                               # up one folder;  cd -  = back to the previous folder
+sudo chage -l $USER                 # password age info for my account
+sudo -k                             # end the sudo timer early
+```
+
+**Commands learned**
+
+| Command | What it does |
+|---|---|
+| `cmd1 && cmd2` | Runs `cmd2` only if `cmd1` succeeded |
+| `# comment` | Everything after `#` is ignored by the shell |
+| `cd -` | Go back to the previous directory |
+| `chmod u=rw,g=r,o= <file>` | Set permissions **exactly** (`=`), instead of adding (`+`) or removing (`-`) |
+| `chown <user>:<group> <file>` | Change owner and group in one command |
+| `sudo -k` / `sudo -l` | End the sudo timer / list what I'm allowed to run with sudo |
+| `sudo chage -l <user>` | Show password age and expiry info |
+| `Ctrl +` / `Ctrl −` / `Ctrl 0` | Make the terminal font bigger / smaller / reset |
+
+**What tripped me up → how I fixed it**
+- **Typo: `mkdir -p lesson && cd lesson4`** created the wrong folder. Fixed with `cd ~`, `rmdir lesson`, then `mkdir -p lesson4 && cd lesson4`. *Lesson: read the whole command before pressing Enter.*
+- **"No such file or directory" on `chmod g-r notes.txt`.** I was in the wrong folder and the file didn't exist yet. Checked `pwd` and `ls`, then `cd ~/lesson4` and `touch notes.txt`.
+- **Wrote `g+r` when I meant "group gets exactly read."** `+` only adds to what's already there. `=` sets it exactly.
+- **First said `x` on a folder means "execute the file."** After the vault lab: `x` on a folder means I can **enter** it and reach the files inside.
+- **Knew `usermod -G` needed `-a` but not why.** `-G` alone **replaces** all my groups, so it can kick me out of `sudo`.
+
+**Key concepts**
+- Linux stores password **hashes**, not passwords. `/etc/passwd` lists users (anyone can read it). `/etc/shadow` holds the hashes (root only). Weak passwords can still be cracked offline from a stolen hash.
+- Ubuntu locks the root account. Admin access goes through `sudo`, which stays unlocked for about 15 minutes.
+- Forgot my WSL password → in PowerShell: `wsl -u root`, then `passwd ed`, then `exit`.
+- **Length beats complexity:** a 4–5 word passphrase (16+ characters). Never reuse passwords (credential stuffing). Use a password manager and MFA (an authenticator app).
+- **Never commit secrets to this public repo.** If one leaks, change the password first, then clean up.
+
+**Knowledge check:** Permission challenges 5/5 (both weak spots cleared). Password field check 3.5/4. Review: credential stuffing.
+
+---
+
+## Entry 7 — 2026-10-28 — Lesson 5: Installing Software (`apt`) + System Info
+
+**Goal:** Install, update and remove software the Linux way, and find out what hardware my lab runs on.
+
+**What I did**
+```bash
+sudo apt update                     # refresh the package list (installs nothing)
+sudo apt upgrade                    # install newer versions of what I already have
+sudo apt install cowsay
+cowsay "lab online"
+sudo apt purge cowsay               # remove the program AND its config files
+sudo apt autoremove                 # remove leftover dependencies nothing needs
+apt install tree                    # no sudo → Permission denied (on purpose)
+free -h                             # RAM
+lscpu                               # CPU details
+nproc                               # number of CPU threads
+
+# remove vs purge lab
+sudo apt remove screen
+ls -l /etc/screenrc                 # config file still there!
+dpkg -l screen                      # status rc = removed, config remains
+sudo apt purge screen
+ls -l /etc/screenrc                 # No such file or directory
+sudo apt install ubuntu-release-upgrader-core update-manager-core   # put back what remove took
+```
+
+**Commands learned**
+
+| Command | What it does |
+|---|---|
+| `sudo apt update` | Refreshes the list of available packages. Run it **first** |
+| `sudo apt upgrade` | Installs newer versions of installed packages |
+| `apt list --upgradable` | Previews what would be upgraded |
+| `apt search <name>` / `apt show <pkg>` | Finds a package / shows its details |
+| `sudo apt install <pkg>` | Installs a package (and its dependencies) |
+| `sudo apt remove <pkg>` | Removes the program, **keeps** its config files |
+| `sudo apt purge <pkg>` | Removes the program **and** its config files |
+| `sudo apt autoremove` | Removes dependencies that nothing needs anymore |
+| `dpkg -l <pkg>` | Package status: `ii` = installed, `rc` = removed but config left |
+| `which <cmd>` | Shows where a command lives |
+| `free -h` | RAM in human-readable units (look at `total` and `available`) |
+| `nproc` / `lscpu` | Number of CPU threads / full CPU details |
+| `cat /etc/os-release`, `uname -r`, `hostname`, `uptime`, `df -h` | OS version, kernel, machine name, time running, disk space |
+
+**What tripped me up → how I fixed it**
+- **Tried `rmdir cowsay` to uninstall.** `rmdir` is only for empty folders. *Lesson: if apt installed it, apt removes it.*
+- **Forgot `purge` and `autoremove`.** Re-learned them with a hands-on lab.
+- **Typed `""still here?"` (3 quotes).** The shell sat at a `>` prompt waiting for the closing quote. **Ctrl + C** cancels.
+- **Stuck at `lines 1-6/6 (END)`.** That's a pager (a viewer). Press **`q`** to quit.
+- **Removing `screen` also removed two system packages** that depend on it. Reinstalling them brought `screen` back as a dependency. *Lesson: always read the `REMOVING:` list before pressing Y, and don't run `autoremove` blindly.*
+- **Thought `remove` was best before a clean reinstall.** Wrong. `remove` keeps the old (maybe broken) config, so the problem comes back. Use **`purge`** for a fresh start.
+
+**Key concepts**
+- `apt install` needs `sudo` because it **writes** to root-owned system folders. `apt search` only **reads**, so it doesn't.
+- **remove** = program goes. **purge** = program + settings go. **autoremove** = unused leftovers go.
+- **remove** when I'll reinstall and want my settings back. **purge** when something's broken or I want it gone for good.
+- A `[Y/n]` prompt: the capital letter is the default, so Enter = yes.
+- My lab: **Intel Core i7-13700KF** (16 cores / 24 threads, so `nproc` = 24), **~15 GiB RAM** visible to Ubuntu, **Ubuntu 26.04.1 LTS** on WSL 2.
+- Linux counts **threads** as CPUs. `lscpu` inside WSL shows a simplified virtual layout (12 cores × 2), not the real chip.
+
+**Knowledge check:** 4/4 challenges. Missed `purge`/`autoremove` on recall, then cleared both in the review lab.
+
+---
+
+## Command Cheat Sheet (Lessons 1–5)
 
 | Category | Commands |
 |---|---|
 | Where am I / what's here | `pwd`, `ls`, `ls -la`, `whoami` |
-| Moving around | `cd <dir>`, `cd ~`, `cd ..`, `cd /` |
+| Moving around | `cd <dir>`, `cd ~`, `cd ..`, `cd -`, `cd /` |
 | Creating | `mkdir`, `touch`, `nano` |
 | Reading | `cat` |
 | Copy / move / rename | `cp`, `mv` |
 | Deleting | `rm -i`, `rmdir` |
-| Help | `man <command>`, Tab completion |
+| Users and permissions | `id`, `groups`, `chmod`, `chown`, `chgrp`, `usermod -aG`, `sudo` |
+| Software | `apt update`, `apt upgrade`, `apt install`, `apt remove`, `apt purge`, `apt autoremove`, `dpkg -l` |
+| System info | `free -h`, `nproc`, `lscpu`, `df -h`, `uname -r`, `uptime`, `cat /etc/os-release` |
+| Help / escape | `man <command>`, `--help`, Tab completion, `q` (quit a pager), `Ctrl + C` (cancel) |
 
 ## Up Next
 - Finish the review mini-lab (Challenges 3–5).
-- **Lesson 5:** installing software with `apt`, and checking memory, disk and running processes.
-- Week 1 mini-project: build an organized `homelab/` folder and a system info report (`uname -a`, `free -h`, `df -h`).
+- **Week 1 mini-project:** build an organized `homelab/` folder and a system info report (`uname -a`, `free -h`, `df -h`), then push it to GitHub from the terminal.
+- Set up GitHub sign-in from Ubuntu so I can `git push` from my lab.
 
 ---
 
